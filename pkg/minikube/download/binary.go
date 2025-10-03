@@ -1,5 +1,9 @@
 /*
-Copyright 2020 The Kubernetes Authors All rights reserved.
+Copyright 2020 The Kubernetes Authors All rights re// Binary will download a binary onto the host
+func Binary(binary, version, osName, archName, binaryURL string) (string, error) {
+	if viper.GetBool("no-kubernetes") {
+		return "", nil
+	}
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

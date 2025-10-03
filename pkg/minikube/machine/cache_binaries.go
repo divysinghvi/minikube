@@ -26,6 +26,7 @@ import (
 	"k8s.io/minikube/pkg/minikube/assets"
 	"k8s.io/minikube/pkg/minikube/bootstrapper"
 	"k8s.io/minikube/pkg/minikube/command"
+	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/download"
 )
 
@@ -44,6 +45,12 @@ func isExcluded(binary string, excludedBinaries []string) bool {
 
 // CacheBinariesForBootstrapper will cache binaries for a bootstrapper
 func CacheBinariesForBootstrapper(version string, excludeBinaries []string, binariesURL string) error {
+	// Skip binary caching for --no-kubernetes flag
+	if version == constants.NoKubernetesVersion {
+		klog.Info("Skipping Kubernetes binary caching for --no-kubernetes")
+		return nil
+	}
+
 	binaries := bootstrapper.GetCachedBinaryList()
 
 	var g errgroup.Group

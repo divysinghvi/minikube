@@ -1,4 +1,6 @@
 /*
+/*
+
 Copyright 2019 The Kubernetes Authors All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,6 +70,10 @@ func componentImage(name string, v semver.Version, mirror string) string {
 func tagFromKubeadm(v, name string) (string, error) {
 	if runtime.GOOS != "linux" {
 		return "", fmt.Errorf("can only get tag from kubeadm on Linux")
+	}
+	// Skip kubeadm binary download for NoKubernetesVersion
+	if v == "v0.0.0" {
+		return "", fmt.Errorf("cannot get tag from kubeadm for NoKubernetesVersion")
 	}
 	kubeadm, err := download.Binary("kubeadm", v, "linux", runtime.GOARCH, "")
 	if err != nil {

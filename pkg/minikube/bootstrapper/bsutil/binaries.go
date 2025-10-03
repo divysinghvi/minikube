@@ -39,6 +39,12 @@ import (
 
 // TransferBinaries transfers all required Kubernetes binaries
 func TransferBinaries(cfg config.KubernetesConfig, c command.Runner, sm sysinit.Manager, binariesURL string) error {
+	// Skip binary transfer for --no-kubernetes flag
+	if cfg.KubernetesVersion == constants.NoKubernetesVersion {
+		klog.Info("Skipping Kubernetes binary transfer for --no-kubernetes")
+		return nil
+	}
+
 	ok, err := binariesExist(cfg, c)
 	if err == nil && ok {
 		klog.Info("Found k8s binaries, skipping transfer")
