@@ -391,7 +391,7 @@ func Provision(cc *config.ClusterConfig, n *config.Node, delOnFail bool, options
 	}
 
 	if !driver.BareMetal(cc.Driver) {
-		beginCacheKubernetesImages(&cacheGroup, cc.KubernetesConfig.ImageRepository, n.KubernetesVersion, cc.KubernetesConfig.ContainerRuntime, cc.Driver)
+		beginCacheKubernetesImages(&cacheGroup, cc.KubernetesConfig.ImageRepository, n.KubernetesVersion, cc.KubernetesConfig.ContainerRuntime, cc.Driver, options)
 	}
 
 	// Abstraction leakage alert: startHost requires the config to be saved, to satisfy pkg/provision/buildroot.

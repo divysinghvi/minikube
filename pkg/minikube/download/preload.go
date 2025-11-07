@@ -31,12 +31,12 @@ import (
 	"google.golang.org/api/option"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
 	"k8s.io/minikube/pkg/minikube/download/gh"
 	"k8s.io/minikube/pkg/minikube/driver"
 	"k8s.io/minikube/pkg/minikube/localpath"
 	"k8s.io/minikube/pkg/minikube/out"
+	"k8s.io/minikube/pkg/minikube/run"
 	"k8s.io/minikube/pkg/minikube/style"
 )
 
@@ -172,9 +172,9 @@ func PreloadExistsGH(k8sVersion, containerRuntime string) bool {
 }
 
 // PreloadExists returns true if there is a preloaded tarball that can be used
-func PreloadExists(k8sVersion, containerRuntime, driverName string, forcePreload ...bool) bool {
+func PreloadExists(k8sVersion, containerRuntime, driverName string, options *run.CommandOptions, forcePreload ...bool) bool {
 	// Prevent preload logic in --no-kubernetes mode
-	if viper.GetBool("no-kubernetes") {
+	if options != nil && options.NoKubernetes {
 		klog.Infof("Skipping preload logic due to --no-kubernetes flag")
 		return false
 	}
@@ -188,7 +188,7 @@ func PreloadExists(k8sVersion, containerRuntime, driverName string, forcePreload
 	klog.Infof("Checking if preload exists for k8s version %s and runtime %s", k8sVersion, containerRuntime)
 	// If `driverName` is BareMetal, there is no preload. Note: some uses of
 	// `PreloadExists` assume that the driver is irrelevant unless BareMetal.
-	if !driver.AllowsPreload(driverName) || !viper.GetBool("preload") && !force {
+	if !driver.AllowsPreload(driverName) || (options != nil && !options.Preload) && !force {
 		return false
 	}
 
@@ -222,7 +222,7 @@ func PreloadExists(k8sVersion, containerRuntime, driverName string, forcePreload
 var checkPreloadExists = PreloadExists
 
 // Preload caches the preloaded images tarball on the host machine
-func Preload(k8sVersion, containerRuntime, driverName string) error {
+func Preload(k8sVersion, containerRuntime, driverName string, options *run.CommandOptions) error {
 	targetPath := TarballPath(k8sVersion, containerRuntime)
 	targetLock := targetPath + ".lock"
 
@@ -240,7 +240,7 @@ func Preload(k8sVersion, containerRuntime, driverName string) error {
 	}
 
 	// Make sure we support this k8s version
-	if !checkPreloadExists(k8sVersion, containerRuntime, driverName) {
+	if !checkPreloadExists(k8sVersion, containerRuntime, driverName, options) {
 		klog.Infof("Preloaded tarball for k8s version %s does not exist", k8sVersion)
 		return nil
 	}

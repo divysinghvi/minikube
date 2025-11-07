@@ -38,6 +38,7 @@ import (
 	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/download"
 	"k8s.io/minikube/pkg/minikube/localpath"
+	"k8s.io/minikube/pkg/minikube/run"
 )
 
 // TestDownloadOnly makes sure the --download-only parameter in minikube start caches the appropriate images and tarballs.
@@ -109,7 +110,7 @@ func TestDownloadOnly(t *testing.T) { // nolint:gocyclo
 				}
 				// Driver does not matter here, since the only exception is none driver,
 				// which cannot occur here.
-				if !download.PreloadExists(v, containerRuntime, "docker", true) {
+				if !download.PreloadExists(v, containerRuntime, "docker", &run.CommandOptions{}, true) {
 					t.Skip("No preload image")
 				}
 				// Just make sure the tarball path exists
@@ -285,7 +286,7 @@ func TestBinaryMirror(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		binaryName = "kubectl.exe"
 	}
-	binaryPath, err := download.Binary(binaryName, constants.DefaultKubernetesVersion, runtime.GOOS, runtime.GOARCH, "")
+	binaryPath, err := download.Binary(binaryName, constants.DefaultKubernetesVersion, runtime.GOOS, runtime.GOARCH, "", &run.CommandOptions{})
 	if err != nil {
 		t.Errorf("Failed to download binary: %+v", err)
 	}

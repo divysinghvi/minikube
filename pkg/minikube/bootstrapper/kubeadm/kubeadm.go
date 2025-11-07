@@ -983,7 +983,7 @@ func (k *Bootstrapper) UpdateNode(cfg config.ClusterConfig, n config.Node, r cru
 
 	sm := sysinit.New(k.c)
 
-	if err := bsutil.TransferBinaries(cfg.KubernetesConfig, k.c, sm, cfg.BinaryMirror); err != nil {
+	if err := bsutil.TransferBinaries(cfg.KubernetesConfig, k.c, sm, cfg.BinaryMirror, &run.CommandOptions{NoKubernetes: cfg.KubernetesConfig.KubernetesVersion == constants.NoKubernetesVersion}); err != nil {
 		return errors.Wrap(err, "downloading binaries")
 	}
 

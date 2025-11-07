@@ -35,6 +35,7 @@ import (
 	"k8s.io/minikube/pkg/minikube/config"
 	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/download"
+	"k8s.io/minikube/pkg/minikube/run"
 	"k8s.io/minikube/pkg/minikube/style"
 	"k8s.io/minikube/pkg/minikube/sysinit"
 )
@@ -417,7 +418,7 @@ func (r *CRIO) SystemLogCmd(length int) string {
 
 // Preload preloads the container runtime with k8s images
 func (r *CRIO) Preload(cc config.ClusterConfig) error {
-	if !download.PreloadExists(cc.KubernetesConfig.KubernetesVersion, cc.KubernetesConfig.ContainerRuntime, cc.Driver) {
+	if !download.PreloadExists(cc.KubernetesConfig.KubernetesVersion, cc.KubernetesConfig.ContainerRuntime, cc.Driver, &run.CommandOptions{NoKubernetes: cc.KubernetesConfig.KubernetesVersion == constants.NoKubernetesVersion}) {
 		return nil
 	}
 

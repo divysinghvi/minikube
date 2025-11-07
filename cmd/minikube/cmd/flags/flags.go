@@ -25,6 +25,8 @@ import (
 const (
 	Interactive  = "interactive"
 	DownloadOnly = "download-only"
+	NoKubernetes = "no-kubernetes"
+	Preload      = "preload"
 )
 
 // CommandOptions returns minikube runtime options from command line flags.
@@ -34,5 +36,7 @@ func CommandOptions() *run.CommandOptions {
 	return &run.CommandOptions{
 		NonInteractive: !viper.GetBool(Interactive),
 		DownloadOnly:   viper.GetBool(DownloadOnly),
+		NoKubernetes:   viper.GetBool(NoKubernetes),
+		Preload:        viper.GetBool(Preload),
 	}
 }

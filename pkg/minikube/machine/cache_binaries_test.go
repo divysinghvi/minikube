@@ -22,6 +22,7 @@ import (
 
 	"k8s.io/minikube/pkg/minikube/bootstrapper"
 	"k8s.io/minikube/pkg/minikube/download"
+	"k8s.io/minikube/pkg/minikube/run"
 )
 
 func TestCacheBinariesForBootstrapper(t *testing.T) {
@@ -48,7 +49,7 @@ func TestCacheBinariesForBootstrapper(t *testing.T) {
 	for _, test := range tc {
 		t.Run(test.version, func(t *testing.T) {
 			t.Setenv("MINIKUBE_HOME", test.minikubeHome)
-			err := CacheBinariesForBootstrapper(test.version, nil, "")
+			err := CacheBinariesForBootstrapper(test.version, nil, "", &run.CommandOptions{})
 			if err != nil && !test.err {
 				t.Fatalf("Got unexpected error %v", err)
 			}
@@ -73,7 +74,7 @@ func TestExcludedBinariesNotDownloaded(t *testing.T) {
 	minikubeHome := t.TempDir()
 	t.Setenv("MINIKUBE_HOME", minikubeHome)
 
-	if err := CacheBinariesForBootstrapper("v1.16.0", []string{binaryToExclude}, ""); err != nil {
+	if err := CacheBinariesForBootstrapper("v1.16.0", []string{binaryToExclude}, "", &run.CommandOptions{}); err != nil {
 		t.Errorf("Failed to cache binaries: %v", err)
 	}
 }

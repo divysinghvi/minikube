@@ -39,6 +39,7 @@ import (
 	"k8s.io/minikube/pkg/minikube/docker"
 	"k8s.io/minikube/pkg/minikube/download"
 	"k8s.io/minikube/pkg/minikube/image"
+	"k8s.io/minikube/pkg/minikube/run"
 	"k8s.io/minikube/pkg/minikube/style"
 	"k8s.io/minikube/pkg/minikube/sysinit"
 	"k8s.io/minikube/pkg/util/retry"
@@ -606,7 +607,7 @@ func (r *Docker) configureDocker(driver string) error {
 // 2. Extract the preloaded tarball to the correct directory
 // 3. Remove the tarball within the VM
 func (r *Docker) Preload(cc config.ClusterConfig) error {
-	if !download.PreloadExists(cc.KubernetesConfig.KubernetesVersion, cc.KubernetesConfig.ContainerRuntime, cc.Driver) {
+	if !download.PreloadExists(cc.KubernetesConfig.KubernetesVersion, cc.KubernetesConfig.ContainerRuntime, cc.Driver, &run.CommandOptions{NoKubernetes: cc.KubernetesConfig.KubernetesVersion == constants.NoKubernetesVersion}) {
 		return nil
 	}
 	k8sVersion := cc.KubernetesConfig.KubernetesVersion

@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/download"
+	"k8s.io/minikube/pkg/minikube/run"
 
 	"github.com/blang/semver/v4"
 
@@ -65,11 +66,11 @@ func componentImage(name string, v semver.Version, mirror string) string {
 }
 
 // tagFromKubeadm gets the image tag by running kubeadm image list command on the host machine (Linux only)
-func tagFromKubeadm(v, name string) (string, error) {
+func tagFromKubeadm(v, name string, options *run.CommandOptions) (string, error) {
 	if runtime.GOOS != "linux" {
 		return "", fmt.Errorf("can only get tag from kubeadm on Linux")
 	}
-	kubeadm, err := download.Binary("kubeadm", v, "linux", runtime.GOARCH, "")
+	kubeadm, err := download.Binary("kubeadm", v, "linux", runtime.GOARCH, "", options)
 	if err != nil {
 		return "", fmt.Errorf("failed to download kubeadm binary: %v", err)
 	}
@@ -145,7 +146,7 @@ func imageVersion(v semver.Version, imageName, defaultVersion string) string {
 	if ver, ok := constants.KubeadmImages[versionString][imageName]; ok {
 		return ver
 	}
-	if ver, err := tagFromKubeadm(versionString, imageName); err == nil {
+	if ver, err := tagFromKubeadm(versionString, imageName, &run.CommandOptions{NoKubernetes: versionString == constants.NoKubernetesVersion}); err == nil {
 		return ver
 	}
 	return tagFromLastMinor(v, imageName, defaultVersion)

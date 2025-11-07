@@ -30,9 +30,11 @@ import (
 	"k8s.io/minikube/pkg/minikube/bootstrapper/images"
 	"k8s.io/minikube/pkg/minikube/command"
 	"k8s.io/minikube/pkg/minikube/config"
+	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/cruntime"
 	"k8s.io/minikube/pkg/minikube/detect"
 	"k8s.io/minikube/pkg/minikube/localpath"
+	"k8s.io/minikube/pkg/minikube/run"
 	"k8s.io/minikube/pkg/minikube/sysinit"
 	"k8s.io/minikube/pkg/util"
 	"k8s.io/minikube/pkg/util/retry"
@@ -124,7 +126,7 @@ func generateTarball(kubernetesVersion, containerRuntime, tarballFilename string
 
 	sm := sysinit.New(runner)
 
-	if err := bsutil.TransferBinaries(kcfg, runner, sm, ""); err != nil {
+	if err := bsutil.TransferBinaries(kcfg, runner, sm, "", &run.CommandOptions{NoKubernetes: kcfg.KubernetesVersion == constants.NoKubernetesVersion}); err != nil {
 		return errors.Wrap(err, "transferring k8s binaries")
 	}
 	// Create image tarball

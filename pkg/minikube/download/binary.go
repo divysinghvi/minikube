@@ -24,9 +24,9 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"k8s.io/klog/v2"
 	"k8s.io/minikube/pkg/minikube/localpath"
+	"k8s.io/minikube/pkg/minikube/run"
 )
 
 // DefaultKubeBinariesURL returns a URL to kube binaries
@@ -53,9 +53,9 @@ func binaryWithChecksumURL(binaryName, version, osName, archName, binaryURL stri
 }
 
 // Binary will download a binary onto the host
-func Binary(binary, version, osName, archName, binaryURL string) (string, error) {
+func Binary(binary, version, osName, archName, binaryURL string, options *run.CommandOptions) (string, error) {
 	// Prevent Kubernetes binary downloads in --no-kubernetes mode
-	if viper.GetBool("no-kubernetes") {
+	if options.NoKubernetes {
 		klog.Infof("Skipping Kubernetes binary download due to --no-kubernetes flag")
 		return "", nil
 	}

@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/localpath"
+	"k8s.io/minikube/pkg/minikube/run"
 )
 
 // Force download tests to run in serial.
@@ -86,7 +87,7 @@ func testBinaryDownloadPreventsMultipleDownload(t *testing.T) {
 	var group sync.WaitGroup
 	group.Add(2)
 	dlCall := func() {
-		if _, err := Binary("kubectl", "v1.20.2", "linux", "amd64", ""); err != nil {
+		if _, err := Binary("kubectl", "v1.20.2", "linux", "amd64", "", &run.CommandOptions{}); err != nil {
 			t.Errorf("Failed to download binary: %+v", err)
 		}
 		group.Done()
@@ -122,13 +123,13 @@ func testPreloadDownloadPreventsMultipleDownload(t *testing.T) {
 		}
 		return os.Stat(f.Name())
 	}
-	checkPreloadExists = func(_, _, _ string, _ ...bool) bool { return true }
+	checkPreloadExists = func(_, _, _ string, _ *run.CommandOptions, _ ...bool) bool { return true }
 	getChecksumGCS = func(_, _ string) ([]byte, error) { return []byte("check"), nil }
 
 	var group sync.WaitGroup
 	group.Add(2)
 	dlCall := func() {
-		if err := Preload(constants.DefaultKubernetesVersion, constants.Docker, "docker"); err != nil {
+		if err := Preload(constants.DefaultKubernetesVersion, constants.Docker, "docker", &run.CommandOptions{}); err != nil {
 			t.Logf("Failed to download preload: %+v (may be ok)", err)
 		}
 		group.Done()
@@ -150,10 +151,10 @@ func testPreloadNotExists(t *testing.T) {
 	DownloadMock = mockSleepDownload(&downloadNum)
 
 	checkCache = func(_ string) (fs.FileInfo, error) { return nil, fmt.Errorf("cache not found") }
-	checkPreloadExists = func(_, _, _ string, _ ...bool) bool { return false }
+	checkPreloadExists = func(_, _, _ string, _ *run.CommandOptions, _ ...bool) bool { return false }
 	getChecksumGCS = func(_, _ string) ([]byte, error) { return []byte("check"), nil }
 
-	err := Preload(constants.DefaultKubernetesVersion, constants.Docker, "docker")
+	err := Preload(constants.DefaultKubernetesVersion, constants.Docker, "docker", &run.CommandOptions{})
 	if err != nil {
 		t.Errorf("Expected no error when preload exists")
 	}
@@ -222,32 +223,32 @@ func testPreloadExistsCaching(t *testing.T) {
 		preloadStates = make(map[string]map[string]preloadState)
 	})
 
-	existence := PreloadExists("v1", "c1", "docker", true)
+	existence := PreloadExists("v1", "c1", "docker", &run.CommandOptions{Preload: true}, true)
 	if existence || gcsCheckCalls != 1 || ghCheckCalls != 1 {
 		t.Errorf("Expected preload not to exist and checks to be performed. Existence: %v, GCS Calls: %d, GH Calls: %d", existence, gcsCheckCalls, ghCheckCalls)
 	}
 	gcsCheckCalls = 0
 	ghCheckCalls = 0
-	existence = PreloadExists("v1", "c1", "docker", true)
+	existence = PreloadExists("v1", "c1", "docker", &run.CommandOptions{Preload: true}, true)
 	if existence || gcsCheckCalls != 0 || ghCheckCalls != 0 {
 		t.Errorf("Expected preload not to exist and no checks to be performed. Existence: %v, GCS Calls: %d, GH Calls: %d", existence, gcsCheckCalls, ghCheckCalls)
 	}
 	doesPreloadExist = true
 	gcsCheckCalls = 0
 	ghCheckCalls = 0
-	existence = PreloadExists("v2", "c1", "docker", true)
+	existence = PreloadExists("v2", "c1", "docker", &run.CommandOptions{Preload: true}, true)
 	if !existence || gcsCheckCalls != 1 || ghCheckCalls != 0 {
 		t.Errorf("Expected preload to exist via GCS. Existence: %v, GCS Calls: %d, GH Calls: %d", existence, gcsCheckCalls, ghCheckCalls)
 	}
 	gcsCheckCalls = 0
 	ghCheckCalls = 0
-	existence = PreloadExists("v2", "c2", "docker", true)
+	existence = PreloadExists("v2", "c2", "docker", &run.CommandOptions{Preload: true}, true)
 	if !existence || gcsCheckCalls != 1 || ghCheckCalls != 0 {
 		t.Errorf("Expected preload to exist via GCS for new runtime. Existence: %v, GCS Calls: %d, GH Calls: %d", existence, gcsCheckCalls, ghCheckCalls)
 	}
 	gcsCheckCalls = 0
 	ghCheckCalls = 0
-	existence = PreloadExists("v2", "c2", "docker", true)
+	existence = PreloadExists("v2", "c2", "docker", &run.CommandOptions{Preload: true}, true)
 	if !existence || gcsCheckCalls != 0 || ghCheckCalls != 0 {
 		t.Errorf("Expected preload to exist and no checks to be performed. Existence: %v, GCS Calls: %d, GH Calls: %d", existence, gcsCheckCalls, ghCheckCalls)
 	}
@@ -264,10 +265,10 @@ func testPreloadWithCachedSizeZero(t *testing.T) {
 	}
 
 	checkCache = func(_ string) (fs.FileInfo, error) { return os.Stat(f.Name()) }
-	checkPreloadExists = func(_, _, _ string, _ ...bool) bool { return true }
+	checkPreloadExists = func(_, _, _ string, _ *run.CommandOptions, _ ...bool) bool { return true }
 	getChecksumGCS = func(_, _ string) ([]byte, error) { return []byte("check"), nil }
 
-	if err := Preload(constants.DefaultKubernetesVersion, constants.Docker, "docker"); err != nil {
+	if err := Preload(constants.DefaultKubernetesVersion, constants.Docker, "docker", &run.CommandOptions{}); err != nil {
 		t.Errorf("Expected no error with cached preload of size zero")
 	}
 

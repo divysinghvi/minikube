@@ -26,4 +26,11 @@ type CommandOptions struct {
 	// flag and we should If only download and cache files for later use and
 	// don't install or start anything.
 	DownloadOnly bool
+
+	// NoKubernetes is true if the minikube command run with the --no-kubernetes
+	// flag and we should skip Kubernetes binary transfer and related setup.
+	NoKubernetes bool
+
+	// Preload is true if the --preload flag is enabled to cache images
+	Preload bool
 }

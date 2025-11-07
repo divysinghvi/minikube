@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"k8s.io/minikube/pkg/minikube/bootstrapper"
 	"k8s.io/minikube/pkg/minikube/download"
+	"k8s.io/minikube/pkg/minikube/run"
 )
 
 // isExcluded returns whether `binary` is expected to be excluded, based on `excludedBinaries`.
@@ -39,7 +40,7 @@ func isExcluded(binary string, excludedBinaries []string) bool {
 }
 
 // CacheBinariesForBootstrapper will cache binaries for a bootstrapper
-func CacheBinariesForBootstrapper(version string, excludeBinaries []string, binariesURL string) error {
+func CacheBinariesForBootstrapper(version string, excludeBinaries []string, binariesURL string, options *run.CommandOptions) error {
 	binaries := bootstrapper.GetCachedBinaryList()
 
 	var g errgroup.Group
@@ -49,7 +50,7 @@ func CacheBinariesForBootstrapper(version string, excludeBinaries []string, bina
 		}
 		bin := bin // https://go.dev/doc/faq#closures_and_goroutines
 		g.Go(func() error {
-			if _, err := download.Binary(bin, version, "linux", runtime.GOARCH, binariesURL); err != nil {
+			if _, err := download.Binary(bin, version, "linux", runtime.GOARCH, binariesURL, options); err != nil {
 				return errors.Wrapf(err, "caching binary %s", bin)
 			}
 			return nil

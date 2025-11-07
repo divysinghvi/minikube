@@ -32,6 +32,7 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/minikube/pkg/minikube/constants"
 	"k8s.io/minikube/pkg/minikube/download"
+	"k8s.io/minikube/pkg/minikube/run"
 	"k8s.io/minikube/pkg/util"
 )
 
@@ -99,7 +100,7 @@ out:
 				break out
 			}
 			// Since none/mock are the only exceptions, it does not matter what driver we choose.
-			if !download.PreloadExists(kv, cr, "docker") {
+			if !download.PreloadExists(kv, cr, "docker", &run.CommandOptions{}) {
 				toGenerate = append(toGenerate, preloadCfg{kv, cr})
 				i++
 				fmt.Printf("[%d] A preloaded tarball for k8s version %s - runtime %q does not exist.\n", i, kv, cr)
