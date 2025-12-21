@@ -35,10 +35,17 @@ import (
 )
 
 // HelmChart holds information about a helm chart.
+// For standard Helm repositories:
+//   - Set RepoURL to the repository URL (e.g., "https://kubernetes.github.io/dashboard/")
+//   - Set Repo to repo-name/chart-name (e.g., "kubernetes-dashboard/kubernetes-dashboard")
+//
+// For OCI registries or direct chart URLs:
+//   - Leave RepoURL empty
+//   - Set Repo to the full OCI URL or chart tarball URL
 type HelmChart struct {
 	Name       string
 	Repo       string
-	RepoURL    string   // Optional: URL to add as helm repo before install
+	RepoURL    string // Optional: URL to add as helm repo before install
 	Namespace  string
 	Values     []string
 	ValueFiles []string
@@ -153,6 +160,22 @@ var Addons = map[string]*Addon{
 	}, map[string]string{
 		"AutoPauseHook": "gcr.io",
 	}, nil),
+	// Dashboard addon: Kubernetes Dashboard v7.x via Helm
+	// 
+	// This addon has been converted from static YAML manifests to Helm-based deployment
+	// to leverage upstream's official Helm chart and enable easier version upgrades.
+	//
+	// Key differences from v2.x:
+	// - Uses Helm chart from https://kubernetes.github.io/dashboard/
+	// - Dashboard v7.x requires authentication (no --enable-skip-login)
+	// - Users must create a token or use kubeconfig for login
+	// - Includes Kong gateway as API proxy
+	//
+	// To access the dashboard:
+	//   minikube dashboard
+	// Or manually:
+	//   kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+	//   # Create token: kubectl -n kubernetes-dashboard create token kubernetes-dashboard
 	"dashboard": NewAddon([]*BinAsset{}, false, "dashboard", "Kubernetes", "", "https://minikube.sigs.k8s.io/docs/handbook/dashboard/", nil, nil, &HelmChart{
 		Name:      "kubernetes-dashboard",
 		Repo:      "kubernetes-dashboard/kubernetes-dashboard",

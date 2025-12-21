@@ -28,14 +28,21 @@ import (
 	"k8s.io/minikube/pkg/minikube/vmpath"
 )
 
-// runs a helm install within the minikube vm or container based on the contents of chart *assets.HelmChart
+// installHelmChart installs a Helm chart within the minikube VM or container.
+// If chart.RepoURL is provided, it will:
+//  1. Add the Helm repository using `helm repo add`
+//  2. Update the repository to get the latest chart versions
+//  3. Install the chart using `helm upgrade --install`
+//
+// If chart.RepoURL is empty, it assumes chart.Repo is a direct reference
+// (e.g., OCI registry URL or local chart path).
 func installHelmChart(ctx context.Context, chart *assets.HelmChart, runner command.Runner) (*exec.Cmd, error) {
 	// If RepoURL is provided, add the repository first
 	if chart.RepoURL != "" {
 		// Extract repo name from chart.Repo (format: repo-name/chart-name)
 		// For example, if Repo is "kubernetes-dashboard/kubernetes-dashboard", repo name is "kubernetes-dashboard"
 		repoName := chart.Name // Use chart name as repo name by default
-		
+
 		addRepoCmd := exec.Command("sudo", "bash", "-c",
 			fmt.Sprintf("KUBECONFIG=%s helm repo add %s %s 2>/dev/null || true",
 				path.Join(vmpath.GuestPersistentDir, "kubeconfig"), repoName, chart.RepoURL))
