@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
 	"k8s.io/minikube/pkg/minikube/assets"
@@ -41,7 +42,10 @@ func installHelmChart(ctx context.Context, chart *assets.HelmChart, runner comma
 	if chart.RepoURL != "" {
 		// Extract repo name from chart.Repo (format: repo-name/chart-name)
 		// For example, if Repo is "kubernetes-dashboard/kubernetes-dashboard", repo name is "kubernetes-dashboard"
-		repoName := chart.Name // Use chart name as repo name by default
+		repoName := chart.Name // Default to chart name if no slash
+		if idx := strings.Index(chart.Repo, "/"); idx > 0 {
+			repoName = chart.Repo[:idx]
+		}
 
 		addRepoCmd := exec.Command("sudo", "bash", "-c",
 			fmt.Sprintf("KUBECONFIG=%s helm repo add %s %s 2>/dev/null || true",

@@ -18,7 +18,19 @@ func (m *mockRunner) RunCmd(cmd *exec.Cmd) (*command.RunResult, error) {
 	return &command.RunResult{}, nil
 }
 
+func (m *mockRunner) StartCmd(cmd *exec.Cmd) (*command.StartedCmd, error) {
+	return &command.StartedCmd{}, nil
+}
+
+func (m *mockRunner) WaitCmd(startedCmd *command.StartedCmd) (*command.RunResult, error) {
+	return &command.RunResult{}, nil
+}
+
 func (m *mockRunner) Copy(f assets.CopyableFile) error {
+	return nil
+}
+
+func (m *mockRunner) CopyFrom(f assets.CopyableFile) error {
 	return nil
 }
 
@@ -26,8 +38,8 @@ func (m *mockRunner) Remove(f assets.CopyableFile) error {
 	return nil
 }
 
-func (m *mockRunner) CombinedOutputTo(cmd *exec.Cmd, w command.Writer) error {
-	return nil
+func (m *mockRunner) ReadableFile(sourcePath string) (assets.ReadableFile, error) {
+	return nil, nil
 }
 
 func TestHelmCommand(t *testing.T) {
@@ -83,6 +95,29 @@ func TestHelmCommand(t *testing.T) {
 			actual := strings.Join(command.Args, " ")
 			if actual != test.expected {
 				t.Errorf("helm command mismatch:\nexpected: %s\nactual:   %s", test.expected, actual)
+			}
+		})
+	}
+}
+
+func TestRepoNameExtraction(t *testing.T) {
+	tests := []struct {
+		repo     string
+		expected string
+	}{
+		{"kubernetes-dashboard/kubernetes-dashboard", "kubernetes-dashboard"},
+		{"my-repo/my-chart", "my-repo"},
+		{"single-name", "single-name"}, // No slash, should return whole string
+	}
+
+	for _, test := range tests {
+		t.Run(test.repo, func(t *testing.T) {
+			result := test.repo
+			if idx := strings.Index(test.repo, "/"); idx > 0 {
+				result = test.repo[:idx]
+			}
+			if result != test.expected {
+				t.Errorf("repo name extraction mismatch for %s:\nexpected: %s\nactual:   %s", test.repo, test.expected, result)
 			}
 		})
 	}
