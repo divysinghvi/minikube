@@ -35,9 +35,17 @@ import (
 )
 
 // HelmChart holds information about a helm chart.
+// For standard Helm repositories:
+//   - Set RepoURL to the repository URL (e.g., "https://kubernetes.github.io/dashboard/")
+//   - Set Repo to repo-name/chart-name (e.g., "kubernetes-dashboard/kubernetes-dashboard")
+//
+// For OCI registries or direct chart URLs:
+//   - Leave RepoURL empty
+//   - Set Repo to the full OCI URL or chart tarball URL
 type HelmChart struct {
 	Name       string
 	Repo       string
+	RepoURL    string // Optional: URL to add as helm repo before install
 	Namespace  string
 	Values     []string
 	ValueFiles []string
@@ -152,25 +160,35 @@ var Addons = map[string]*Addon{
 	}, map[string]string{
 		"AutoPauseHook": "gcr.io",
 	}, nil),
-	"dashboard": NewAddon([]*BinAsset{
-		// We want to create the kubernetes-dashboard ns first so that every subsequent object can be created
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-ns.yaml", vmpath.GuestAddonsDir, "dashboard-ns.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-clusterrole.yaml", vmpath.GuestAddonsDir, "dashboard-clusterrole.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-clusterrolebinding.yaml", vmpath.GuestAddonsDir, "dashboard-clusterrolebinding.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-configmap.yaml", vmpath.GuestAddonsDir, "dashboard-configmap.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-dp.yaml.tmpl", vmpath.GuestAddonsDir, "dashboard-dp.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-role.yaml", vmpath.GuestAddonsDir, "dashboard-role.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-rolebinding.yaml", vmpath.GuestAddonsDir, "dashboard-rolebinding.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-sa.yaml", vmpath.GuestAddonsDir, "dashboard-sa.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-secret.yaml", vmpath.GuestAddonsDir, "dashboard-secret.yaml", "0640"),
-		MustBinAsset(addons.DashboardAssets, "dashboard/dashboard-svc.yaml", vmpath.GuestAddonsDir, "dashboard-svc.yaml", "0640"),
-	}, false, "dashboard", "Kubernetes", "", "https://minikube.sigs.k8s.io/docs/handbook/dashboard/", map[string]string{
-		"Dashboard":      "kubernetesui/dashboard:v2.7.0@sha256:2e500d29e9d5f4a086b908eb8dfe7ecac57d2ab09d65b24f588b1d449841ef93",
-		"MetricsScraper": "kubernetesui/metrics-scraper:v1.0.8@sha256:76049887f07a0476dc93efc2d3569b9529bf982b22d29f356092ce206e98765c",
-	}, map[string]string{
-		"Dashboard":      "docker.io",
-		"MetricsScraper": "docker.io",
-	}, nil),
+	// Dashboard addon: Kubernetes Dashboard v7.x via Helm
+	// 
+	// This addon has been converted from static YAML manifests to Helm-based deployment
+	// to leverage upstream's official Helm chart and enable easier version upgrades.
+	//
+	// Key differences from v2.x:
+	// - Uses Helm chart from https://kubernetes.github.io/dashboard/
+	// - Dashboard v7.x requires authentication (no --enable-skip-login)
+	// - Users must create a token or use kubeconfig for login
+	// - Includes Kong gateway as API proxy
+	//
+	// To access the dashboard:
+	//   minikube dashboard
+	// Or manually:
+	//   kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+	//   # Create token: kubectl -n kubernetes-dashboard create token kubernetes-dashboard
+	"dashboard": NewAddon([]*BinAsset{}, false, "dashboard", "Kubernetes", "", "https://minikube.sigs.k8s.io/docs/handbook/dashboard/", nil, nil, &HelmChart{
+		Name:      "kubernetes-dashboard",
+		Repo:      "kubernetes-dashboard/kubernetes-dashboard",
+		RepoURL:   "https://kubernetes.github.io/dashboard/",
+		Namespace: "kubernetes-dashboard",
+		Values: []string{
+			// Metrics scraper configuration
+			"metricsScraper.enabled=true",
+			// Disable external dependencies that are not needed in minikube
+			"nginx.enabled=false",
+			"cert-manager.enabled=false",
+		},
+	}),
 	"default-storageclass": NewAddon([]*BinAsset{
 		MustBinAsset(addons.DefaultStorageClassAssets,
 			"storageclass/storageclass.yaml",

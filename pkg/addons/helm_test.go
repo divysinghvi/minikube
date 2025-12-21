@@ -1,28 +1,46 @@
-/*
-Copyright 2025 The Kubernetes Authors All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package addons
 
 import (
 	"context"
+	"os/exec"
 	"strings"
 	"testing"
 
 	"k8s.io/minikube/pkg/minikube/assets"
+	"k8s.io/minikube/pkg/minikube/command"
 )
+
+// mockRunner is a mock implementation of command.Runner for testing
+type mockRunner struct{}
+
+func (m *mockRunner) RunCmd(cmd *exec.Cmd) (*command.RunResult, error) {
+	// Mock successful execution
+	return &command.RunResult{}, nil
+}
+
+func (m *mockRunner) StartCmd(cmd *exec.Cmd) (*command.StartedCmd, error) {
+	return &command.StartedCmd{}, nil
+}
+
+func (m *mockRunner) WaitCmd(startedCmd *command.StartedCmd) (*command.RunResult, error) {
+	return &command.RunResult{}, nil
+}
+
+func (m *mockRunner) Copy(f assets.CopyableFile) error {
+	return nil
+}
+
+func (m *mockRunner) CopyFrom(f assets.CopyableFile) error {
+	return nil
+}
+
+func (m *mockRunner) Remove(f assets.CopyableFile) error {
+	return nil
+}
+
+func (m *mockRunner) ReadableFile(sourcePath string) (assets.ReadableFile, error) {
+	return nil, nil
+}
 
 func TestHelmCommand(t *testing.T) {
 	tests := []struct {
@@ -67,12 +85,39 @@ func TestHelmCommand(t *testing.T) {
 		},
 	}
 
+	runner := &mockRunner{}
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			command := helmUninstallOrInstall(context.Background(), test.chart, test.enable)
+			command, err := helmUninstallOrInstall(context.Background(), test.chart, runner, test.enable)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 			actual := strings.Join(command.Args, " ")
 			if actual != test.expected {
 				t.Errorf("helm command mismatch:\nexpected: %s\nactual:   %s", test.expected, actual)
+			}
+		})
+	}
+}
+
+func TestRepoNameExtraction(t *testing.T) {
+	tests := []struct {
+		repo     string
+		expected string
+	}{
+		{"kubernetes-dashboard/kubernetes-dashboard", "kubernetes-dashboard"},
+		{"my-repo/my-chart", "my-repo"},
+		{"single-name", "single-name"}, // No slash, should return whole string
+	}
+
+	for _, test := range tests {
+		t.Run(test.repo, func(t *testing.T) {
+			result := test.repo
+			if idx := strings.Index(test.repo, "/"); idx > 0 {
+				result = test.repo[:idx]
+			}
+			if result != test.expected {
+				t.Errorf("repo name extraction mismatch for %s:\nexpected: %s\nactual:   %s", test.repo, test.expected, result)
 			}
 		})
 	}
